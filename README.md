@@ -73,3 +73,46 @@ Create Table: CREATE TABLE `vehiculos` (
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 1 row in set (0.001 sec)
 
+-- 1. Tabla: persona
+CREATE TABLE persona (
+    id_persona INT(11) NOT NULL AUTO_INCREMENT,
+    identificacion VARCHAR(20) NOT NULL,
+    tipo_identificacion VARCHAR(2) NOT NULL,
+    nombres VARCHAR(100) NOT NULL,
+    apellidos VARCHAR(100) NOT NULL,
+    correo_electronico VARCHAR(150) NOT NULL,
+    tipo_persona VARCHAR(1) NOT NULL,
+    PRIMARY KEY (id_persona),
+    UNIQUE KEY uq_persona_identificacion (identificacion),
+    UNIQUE KEY uq_persona_correo (correo_electronico),
+    CONSTRAINT chk_tipo_identificacion CHECK (tipo_identificacion IN ('CC')),
+    CONSTRAINT chk_tipo_persona CHECK (tipo_persona IN ('C', 'A'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 2. Tabla: usuario
+-- Nota: Clave primaria compuesta (id_persona, login) para garantizar 1:1 con administrativos.
+CREATE TABLE usuario (
+    id_persona INT(11) NOT NULL,
+    login VARCHAR(50) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    apikey VARCHAR(64) NOT NULL DEFAULT UUID(),
+    PRIMARY KEY (id_persona, login),
+    UNIQUE KEY uq_usuario_id_persona (id_persona),
+    UNIQUE KEY uq_usuario_login (login),
+    CONSTRAINT fk_usuario_persona FOREIGN KEY (id_persona) REFERENCES persona (id_persona) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3. Tabla: vehiculo_persona (Relación M:N entre Vehículo y Conductor)
+CREATE TABLE vehiculo_persona (
+    id_vehiculo_persona INT(11) NOT NULL AUTO_INCREMENT,
+    id_vehiculo INT(11) NOT NULL,
+    id_persona INT(11) NOT NULL,
+    fecha_asociacion DATE NOT NULL DEFAULT CURRENT_DATE(),
+    estado_conductor VARCHAR(2) NOT NULL DEFAULT 'EA',
+    PRIMARY KEY (id_vehiculo_persona),
+    UNIQUE KEY uq_vehiculo_conductor (id_vehiculo, id_persona),
+    KEY fk_vehiculo_persona_persona (id_persona),
+    CONSTRAINT fk_vehiculo_persona_vehiculo FOREIGN KEY (id_vehiculo) REFERENCES vehiculos (id_vehiculo) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_vehiculo_persona_persona FOREIGN KEY (id_persona) REFERENCES persona (id_persona) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT chk_estado_conductor CHECK (estado_conductor IN ('PO', 'EA', 'RO'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

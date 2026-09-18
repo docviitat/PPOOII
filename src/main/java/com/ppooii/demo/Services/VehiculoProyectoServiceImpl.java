@@ -39,6 +39,10 @@ public class VehiculoProyectoServiceImpl implements IVehiculoProyectoService {
     @Override
     public boolean guardarDocumento(Documento doc) {
         try {
+            if (doc.getCodigoDocumento() == null || doc.getCodigoDocumento().trim().isEmpty()) {
+                logger.error("El código del documento es obligatorio.");
+                return false;
+            }
             documentoRepo.save(doc);
             return true;
         } catch (Exception e) {
@@ -62,7 +66,7 @@ public class VehiculoProyectoServiceImpl implements IVehiculoProyectoService {
     @Override
     public boolean eliminarDocumento(int id) {
         try {
-            Documento d = documentoRepo.findById(id);
+            Documento d = documentoRepo.findById((long) id).orElse(null);
             if (d == null) return false;
             documentoRepo.delete(d);
             return true;
@@ -119,7 +123,7 @@ public class VehiculoProyectoServiceImpl implements IVehiculoProyectoService {
     @Override
     public boolean eliminarVehiculo(int id) {
         try {
-            Vehiculo v = vehiculoRepo.findById(id);
+            Vehiculo v = vehiculoRepo.findById((long) id).orElse(null);
             if (v == null) return false;
             vehiculoRepo.delete(v);
             return true;
@@ -163,7 +167,7 @@ public class VehiculoProyectoServiceImpl implements IVehiculoProyectoService {
         List<VehiculoDocumento> relaciones = vehiculoDocumentoRepo.findByIdDocumento(idDocumento);
         List<Vehiculo> resultado = new ArrayList<>();
         for (VehiculoDocumento rel : relaciones) {
-            Vehiculo v = vehiculoRepo.findById(rel.getIdVehiculo());
+            Vehiculo v = vehiculoRepo.findById((long) rel.getIdVehiculo()).orElse(null);
             if (v != null && !resultado.contains(v)) {
                 resultado.add(v);
             }
@@ -176,7 +180,7 @@ public class VehiculoProyectoServiceImpl implements IVehiculoProyectoService {
         List<VehiculoDocumento> relaciones = vehiculoDocumentoRepo.findByEstadoDocumento(estado);
         List<Vehiculo> resultado = new ArrayList<>();
         for (VehiculoDocumento rel : relaciones) {
-            Vehiculo v = vehiculoRepo.findById(rel.getIdVehiculo());
+            Vehiculo v = vehiculoRepo.findById((long) rel.getIdVehiculo()).orElse(null);
             if (v != null && !resultado.contains(v)) {
                 resultado.add(v);
             }
