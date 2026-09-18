@@ -5,6 +5,7 @@ import java.util.List;
 
 public interface IPersonaService {
     Persona guardarPersona(Persona persona);
+    Persona actualizarPersona(Long id, Persona persona); // FIX: was missing (requirement asks for POST-GET-PUT)
     Persona obtenerPorId(Long id);
     List<Persona> obtenerTodas();
     List<Object[]> obtenerTotalPorTipo();

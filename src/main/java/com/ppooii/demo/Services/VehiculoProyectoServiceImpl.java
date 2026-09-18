@@ -22,6 +22,7 @@ import com.ppooii.demo.Repository.VehiculoDocumentoRepository;
 import com.ppooii.demo.Repository.VehiculoRepository;
 import com.ppooii.demo.Services.Interfaces.IVehiculoProyectoService;
 import com.ppooii.demo.dto.VehiculoConDocumentosDTO;
+import com.ppooii.demo.dto.VehiculoDetalleDTO;
 
 @Service("VehiculoProyectoService")
 public class VehiculoProyectoServiceImpl implements IVehiculoProyectoService {
@@ -86,7 +87,6 @@ public class VehiculoProyectoServiceImpl implements IVehiculoProyectoService {
 
             for (VehiculoConDocumentosDTO.DocumentoAsociarDTO docDto : dto.getDocumentos()) {
                 VehiculoDocumento vd = new VehiculoDocumento();
-                // Fixed primitive int to Long type mismatch
                 vd.setIdVehiculo((long) vehiculoGuardado.getId());
                 vd.setIdDocumento((long) docDto.getIdDocumento());
                 vd.setFechaExpedicion(docDto.getFechaExpedicion());
@@ -131,23 +131,36 @@ public class VehiculoProyectoServiceImpl implements IVehiculoProyectoService {
         return vehiculoRepo.findAll();
     }
 
+    // FIX: now takes a list so several documents can be uploaded/associated in a single call,
+    // as required ("pueda realizar el cargue de uno o varios documentos a la vez").
     @Override
-    public boolean asociarDocumento(VehiculoDocumento vd) {
+    @Transactional
+    public boolean asociarDocumentos(List<VehiculoDocumento> documentos) {
         try {
-            if (vd.getEstadoDocumento() == null || vd.getEstadoDocumento().trim().isEmpty()) {
-                vd.setEstadoDocumento("En Verificacion");
+            if (documentos == null || documentos.isEmpty()) return false;
+            for (VehiculoDocumento vd : documentos) {
+                if (vd.getEstadoDocumento() == null || vd.getEstadoDocumento().trim().isEmpty()) {
+                    vd.setEstadoDocumento("En Verificacion");
+                }
+                vehiculoDocumentoRepo.save(vd);
             }
-            vehiculoDocumentoRepo.save(vd);
             return true;
         } catch (Exception e) {
-            logger.error("Error al asociar documento: " + e.getMessage());
+            logger.error("Error al asociar documentos: " + e.getMessage());
             return false;
         }
     }
 
+    // FIX: now returns the vehicle together with its associated drivers and documents.
     @Override
-    public Vehiculo buscarPorPlaca(String placa) {
-        return vehiculoRepo.findByPlaca(placa);
+    public VehiculoDetalleDTO buscarPorPlaca(String placa) {
+        Vehiculo vehiculo = vehiculoRepo.findByPlaca(placa);
+        if (vehiculo == null) return null;
+
+        List<VehiculoConductor> conductores = vehiculoConductorRepo.findByVehiculoId((long) vehiculo.getId());
+        List<VehiculoDocumento> documentos = vehiculoDocumentoRepo.findByIdVehiculo((long) vehiculo.getId());
+
+        return new VehiculoDetalleDTO(vehiculo, conductores, documentos);
     }
 
     @Override

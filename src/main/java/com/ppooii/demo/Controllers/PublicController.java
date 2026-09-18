@@ -5,9 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.ppooii.demo.Entities.Vehiculo;
 import com.ppooii.demo.Services.Interfaces.IPersonaService;
 import com.ppooii.demo.Services.Interfaces.IVehiculoProyectoService;
+import com.ppooii.demo.dto.VehiculoDetalleDTO;
 
 @RestController
 @RequestMapping("/api/public")
@@ -26,13 +26,14 @@ public class PublicController {
     }
 
     // 2. Consult vehicle by plate including related drivers and documents
+    // FIX: now returns VehiculoDetalleDTO (vehiculo + conductores + documentos) instead of a bare Vehiculo.
     @GetMapping("/vehiculos/placa/{placa}")
-    public ResponseEntity<Vehiculo> consultarVehiculoPorPlaca(@PathVariable String placa) {
-        Vehiculo vehiculo = vehiculoService.buscarPorPlaca(placa);
-        if (vehiculo == null) {
+    public ResponseEntity<VehiculoDetalleDTO> consultarVehiculoPorPlaca(@PathVariable String placa) {
+        VehiculoDetalleDTO detalle = vehiculoService.buscarPorPlaca(placa);
+        if (detalle == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(vehiculo);
+        return ResponseEntity.ok(detalle);
     }
 
     // 3. Consult vehicles with expired documents

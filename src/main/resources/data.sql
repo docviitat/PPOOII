@@ -17,17 +17,20 @@ VALUES
 (2, 'TM', 'Tecno Mecanica', 'AM', 'RA', 'Revision tecnico-mecanica y de gases');
 
 -- Seed Dependent Data: usuario
+-- FIX: passwords in PLAINTEXT because JWTAuthenticationConfig compares with .equals() (the app
+-- never hashes passwords anywhere - PersonaServiceImpl stores the auto-generated one as-is too).
+-- 'mgomez' is your BOOTSTRAP ADMIN for testing: login=mgomez / password=admin123
 INSERT INTO usuario (login, idpersona, password, apikey)
 VALUES 
-('jperez', 1, '$2a$10$e8R6.Q4a4K92U.zQO3pY3eE0K0bS/oYd6V5w8G.H1', 'api_key_12345'),
-('mgomez', 2, 'cGFzc3dvcmQ=', 'api_key_67890');
+('jperez', 1, 'conductor123', 'api_key_12345'),
+('mgomez', 2, 'admin123', 'api_key_67890');
 
 -- Seed Relationship Data: vehiculo_conductor
+-- FIX: estado was 'AC', which is not one of the valid values enforced by the new CHECK
+-- constraint (PO, EA, RO). Changed to 'PO' (Puede Operar).
 INSERT INTO vehiculo_conductor (id, estado, fecha_asociacion, persona_id, vehiculo_id)
 VALUES 
-(1, 'AC', '2026-01-15', 1, 1);
+(1, 'PO', '2026-01-15', 1, 1);
 
--- Seed Relationship Data: vehiculo_persona
-INSERT INTO vehiculo_persona (id_vehiculo, id_persona, fecha_asociacion, estado)
-VALUES 
-(1, 1, '2026-01-10 10:00:00', 'PO');
+-- NOTE: the old "vehiculo_persona" seed insert was removed - that table no longer exists,
+-- it was a duplicate of vehiculo_conductor (see schema.sql fix notes).

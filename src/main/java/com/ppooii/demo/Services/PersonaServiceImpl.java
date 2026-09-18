@@ -52,6 +52,24 @@ public class PersonaServiceImpl implements IPersonaService {
         return nuevaPersona;
     }
 
+    // FIX: PUT endpoint was missing entirely for Persona despite being a stated requirement.
+    @Override
+    @Transactional
+    public Persona actualizarPersona(Long id, Persona datosActualizados) {
+        Persona existente = personaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Persona no encontrada con ID: " + id));
+
+        // tipoPersona is intentionally NOT editable here: changing A<->C after creation would
+        // orphan or wrongly require a Usuario record. Only the descriptive fields are updatable.
+        existente.setIdentificacion(datosActualizados.getIdentificacion());
+        existente.setTipoIdentificacion(datosActualizados.getTipoIdentificacion());
+        existente.setNombres(datosActualizados.getNombres());
+        existente.setApellidos(datosActualizados.getApellidos());
+        existente.setCorreo(datosActualizados.getCorreo());
+
+        return personaRepository.save(existente);
+    }
+
     @Override
     public Persona obtenerPorId(Long id) {
         return personaRepository.findById(id)

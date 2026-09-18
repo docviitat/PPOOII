@@ -10,15 +10,14 @@ import com.ppooii.demo.Entities.VehiculoDocumento;
 @Repository
 public interface VehiculoDocumentoRepository extends JpaRepository<VehiculoDocumento, Long> {
 
-    // Fix: Parameter updated to int to match primitive field type
-    List<VehiculoDocumento> findByIdDocumento(int idDocumento);
-
-    // Alternative overload if idDocumento uses Long in entity
     List<VehiculoDocumento> findByIdDocumento(Long idDocumento);
+
+    // FIX: was missing - needed to look up all documents for a given vehicle (used by the
+    // "consultar por placa" public service to embed related documents).
+    List<VehiculoDocumento> findByIdVehiculo(Long idVehiculo);
 
     List<VehiculoDocumento> findByEstadoDocumento(String estadoDocumento);
 
-    // Fix: Added missing date range query methods for expiration logic
     List<VehiculoDocumento> findByFechaVencimientoBefore(LocalDate fecha);
 
     List<VehiculoDocumento> findByFechaVencimientoBetween(LocalDate inicio, LocalDate fin);

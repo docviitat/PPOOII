@@ -32,6 +32,12 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.CREATED).body(personaService.guardarPersona(persona));
     }
 
+    // FIX: PUT was missing entirely.
+    @PutMapping("/personas/{id}")
+    public ResponseEntity<Persona> actualizarPersona(@PathVariable Long id, @RequestBody Persona persona) {
+        return ResponseEntity.ok(personaService.actualizarPersona(id, persona));
+    }
+
     @GetMapping("/personas/{id}")
     public ResponseEntity<Persona> obtenerPersonaPorId(@PathVariable Long id) {
         return ResponseEntity.ok(personaService.obtenerPorId(id));
@@ -68,13 +74,14 @@ public class AdminController {
         return ResponseEntity.ok(vehiculoService.listarVehiculos());
     }
 
+    // FIX: now accepts a JSON array so one or several documents can be uploaded/associated at once.
     @PostMapping("/vehiculos/documentos")
-    public ResponseEntity<?> asociarDocumentoPdfBase64(@RequestBody VehiculoDocumento vd) {
-        boolean asociado = vehiculoService.asociarDocumento(vd);
+    public ResponseEntity<?> asociarDocumentosPdfBase64(@RequestBody List<VehiculoDocumento> documentos) {
+        boolean asociado = vehiculoService.asociarDocumentos(documentos);
         if (!asociado) {
-            return ResponseEntity.badRequest().body("Error al asociar el documento.");
+            return ResponseEntity.badRequest().body("Error al asociar los documentos.");
         }
-        return ResponseEntity.ok("Documento asociado correctamente.");
+        return ResponseEntity.ok("Documento(s) asociado(s) correctamente.");
     }
 
     // --- DRIVER-VEHICLE RELATIONSHIP ENDPOINTS ---
