@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.ppooii.demo.Entities.Documento;
 import com.ppooii.demo.Entities.Vehiculo;
+import com.ppooii.demo.Entities.VehiculoConductor;
 import com.ppooii.demo.Entities.VehiculoDocumento;
 import com.ppooii.demo.dto.VehiculoConDocumentosDTO;
 
@@ -20,9 +21,15 @@ public interface IVehiculoProyectoService {
     List<Vehiculo> listarVehiculos();
 
     boolean asociarDocumento(VehiculoDocumento vd);
-
     Vehiculo buscarPorPlaca(String placa);
     List<Vehiculo> buscarPorTipoVehiculo(String tipo);
     List<Vehiculo> buscarPorTipoDocumento(int idDocumento);
     List<Vehiculo> buscarPorEstadoDocumento(String estado);
+
+    // Missing Interface Declarations
+    VehiculoConductor asociarConductorAVehiculo(Long vehiculoId, Long personaId, String estado);
+    VehiculoConductor actualizarEstadoConductor(Long vehiculoConductorId, String nuevoEstado);
+    List<VehiculoConductor> buscarPorEstadoConductor(String estado);
+    List<Vehiculo> buscarVehiculosConDocumentosVencidos();
+    List<Vehiculo> buscarVehiculosPorVencer(int dias);
 }

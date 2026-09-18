@@ -1,19 +1,23 @@
 package com.ppooii.demo.Services;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ppooii.demo.Entities.Documento;
+import com.ppooii.demo.Entities.Persona;
 import com.ppooii.demo.Entities.Vehiculo;
+import com.ppooii.demo.Entities.VehiculoConductor;
 import com.ppooii.demo.Entities.VehiculoDocumento;
 import com.ppooii.demo.Repository.DocumentoRepository;
+import com.ppooii.demo.Repository.PersonaRepository;
+import com.ppooii.demo.Repository.VehiculoConductorRepository;
 import com.ppooii.demo.Repository.VehiculoDocumentoRepository;
 import com.ppooii.demo.Repository.VehiculoRepository;
 import com.ppooii.demo.Services.Interfaces.IVehiculoProyectoService;
@@ -24,25 +28,16 @@ public class VehiculoProyectoServiceImpl implements IVehiculoProyectoService {
 
     private static final Logger logger = LogManager.getLogger(VehiculoProyectoServiceImpl.class);
 
-    @Autowired
-    @Qualifier("IVehiculoRepo")
-    private VehiculoRepository vehiculoRepo;
-
-    @Autowired
-    @Qualifier("IDocumentoRepo")
-    private DocumentoRepository documentoRepo;
-
-    @Autowired
-    @Qualifier("IVehiculoDocumentoRepo")
-    private VehiculoDocumentoRepository vehiculoDocumentoRepo;
+    @Autowired private VehiculoRepository vehiculoRepo;
+    @Autowired private DocumentoRepository documentoRepo;
+    @Autowired private VehiculoDocumentoRepository vehiculoDocumentoRepo;
+    @Autowired private VehiculoConductorRepository vehiculoConductorRepo;
+    @Autowired private PersonaRepository personaRepo;
 
     @Override
     public boolean guardarDocumento(Documento doc) {
         try {
-            if (doc.getCodigoDocumento() == null || doc.getCodigoDocumento().trim().isEmpty()) {
-                logger.error("El código del documento es obligatorio.");
-                return false;
-            }
+            if (doc.getCodigoDocumento() == null || doc.getCodigoDocumento().trim().isEmpty()) return false;
             documentoRepo.save(doc);
             return true;
         } catch (Exception e) {
@@ -85,17 +80,15 @@ public class VehiculoProyectoServiceImpl implements IVehiculoProyectoService {
     @Transactional
     public boolean guardarVehiculoConDocumentos(VehiculoConDocumentosDTO dto) {
         try {
-            if (dto.getDocumentos() == null || dto.getDocumentos().isEmpty()) {
-                logger.error("No se puede crear un vehículo sin al menos un documento asociado.");
-                return false;
-            }
+            if (dto.getDocumentos() == null || dto.getDocumentos().isEmpty()) return false;
 
             Vehiculo vehiculoGuardado = vehiculoRepo.save(dto.getVehiculo());
 
             for (VehiculoConDocumentosDTO.DocumentoAsociarDTO docDto : dto.getDocumentos()) {
                 VehiculoDocumento vd = new VehiculoDocumento();
-                vd.setIdVehiculo(vehiculoGuardado.getId());
-                vd.setIdDocumento(docDto.getIdDocumento());
+                // Fixed primitive int to Long type mismatch
+                vd.setIdVehiculo((long) vehiculoGuardado.getId());
+                vd.setIdDocumento((long) docDto.getIdDocumento());
                 vd.setFechaExpedicion(docDto.getFechaExpedicion());
                 vd.setFechaVencimiento(docDto.getFechaVencimiento());
                 vd.setEstadoDocumento("En Verificacion");
@@ -164,13 +157,11 @@ public class VehiculoProyectoServiceImpl implements IVehiculoProyectoService {
 
     @Override
     public List<Vehiculo> buscarPorTipoDocumento(int idDocumento) {
-        List<VehiculoDocumento> relaciones = vehiculoDocumentoRepo.findByIdDocumento(idDocumento);
+        List<VehiculoDocumento> relaciones = vehiculoDocumentoRepo.findByIdDocumento((long) idDocumento);
         List<Vehiculo> resultado = new ArrayList<>();
         for (VehiculoDocumento rel : relaciones) {
-            Vehiculo v = vehiculoRepo.findById((long) rel.getIdVehiculo()).orElse(null);
-            if (v != null && !resultado.contains(v)) {
-                resultado.add(v);
-            }
+            Vehiculo v = vehiculoRepo.findById(rel.getIdVehiculo()).orElse(null);
+            if (v != null && !resultado.contains(v)) resultado.add(v);
         }
         return resultado;
     }
@@ -180,10 +171,70 @@ public class VehiculoProyectoServiceImpl implements IVehiculoProyectoService {
         List<VehiculoDocumento> relaciones = vehiculoDocumentoRepo.findByEstadoDocumento(estado);
         List<Vehiculo> resultado = new ArrayList<>();
         for (VehiculoDocumento rel : relaciones) {
-            Vehiculo v = vehiculoRepo.findById((long) rel.getIdVehiculo()).orElse(null);
-            if (v != null && !resultado.contains(v)) {
-                resultado.add(v);
-            }
+            Vehiculo v = vehiculoRepo.findById(rel.getIdVehiculo()).orElse(null);
+            if (v != null && !resultado.contains(v)) resultado.add(v);
+        }
+        return resultado;
+    }
+
+    @Override
+    @Transactional
+    public VehiculoConductor asociarConductorAVehiculo(Long vehiculoId, Long personaId, String estado) {
+        Persona persona = personaRepo.findById(personaId)
+                .orElseThrow(() -> new RuntimeException("Persona no encontrada."));
+
+        if (!"C".equalsIgnoreCase(persona.getTipoPersona())) {
+            throw new IllegalArgumentException("Solo personas de tipo CONDUCTOR ('C') pueden asociarse a un vehículo.");
+        }
+
+        Vehiculo vehiculo = vehiculoRepo.findById(vehiculoId)
+                .orElseThrow(() -> new RuntimeException("Vehículo no encontrado."));
+
+        VehiculoConductor vc = new VehiculoConductor();
+        vc.setVehiculo(vehiculo);
+        vc.setConductor(persona);
+        vc.setFechaAsociacion(LocalDate.now());
+        vc.setEstado(estado);
+
+        return vehiculoConductorRepo.save(vc);
+    }
+
+    @Override
+    @Transactional
+    public VehiculoConductor actualizarEstadoConductor(Long vehiculoConductorId, String nuevoEstado) {
+        if (!List.of("PO", "EA", "RO").contains(nuevoEstado)) {
+            throw new IllegalArgumentException("Estado inválido. Valores permitidos: PO, EA, RO");
+        }
+        VehiculoConductor vc = vehiculoConductorRepo.findById(vehiculoConductorId)
+                .orElseThrow(() -> new RuntimeException("Relación Vehículo-Conductor no encontrada."));
+        vc.setEstado(nuevoEstado);
+        return vehiculoConductorRepo.save(vc);
+    }
+
+    @Override
+    public List<VehiculoConductor> buscarPorEstadoConductor(String estado) {
+        return vehiculoConductorRepo.findByEstado(estado);
+    }
+
+    @Override
+    public List<Vehiculo> buscarVehiculosConDocumentosVencidos() {
+        List<VehiculoDocumento> vencidos = vehiculoDocumentoRepo.findByFechaVencimientoBefore(LocalDate.now());
+        List<Vehiculo> resultado = new ArrayList<>();
+        for (VehiculoDocumento vd : vencidos) {
+            Vehiculo v = vehiculoRepo.findById(vd.getIdVehiculo()).orElse(null);
+            if (v != null && !resultado.contains(v)) resultado.add(v);
+        }
+        return resultado;
+    }
+
+    @Override
+    public List<Vehiculo> buscarVehiculosPorVencer(int dias) {
+        LocalDate limite = LocalDate.now().plusDays(dias);
+        List<VehiculoDocumento> porVencer = vehiculoDocumentoRepo.findByFechaVencimientoBetween(LocalDate.now(), limite);
+        List<Vehiculo> resultado = new ArrayList<>();
+        for (VehiculoDocumento vd : porVencer) {
+            Vehiculo v = vehiculoRepo.findById(vd.getIdVehiculo()).orElse(null);
+            if (v != null && !resultado.contains(v)) resultado.add(v);
         }
         return resultado;
     }

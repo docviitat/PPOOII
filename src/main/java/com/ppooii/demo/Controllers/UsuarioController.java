@@ -14,6 +14,7 @@ public class UsuarioController {
     @Autowired
     private IUsuarioService usuarioService;
 
+    // Password change endpoint (Login in URL, new password in Body)
     @PutMapping("/{login}/password")
     public ResponseEntity<Usuario> cambiarPassword(
             @PathVariable String login,
@@ -21,6 +22,7 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.cambiarPassword(login, nuevaPassword));
     }
 
+    // GET endpoint to regenerate user APIKey
     @GetMapping("/{login}/apikey")
     public ResponseEntity<String> regenerarApiKey(@PathVariable String login) {
         return ResponseEntity.ok(usuarioService.regenerarApiKey(login));

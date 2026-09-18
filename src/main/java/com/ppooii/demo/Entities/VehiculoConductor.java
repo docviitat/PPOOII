@@ -23,6 +23,7 @@ public class VehiculoConductor implements Serializable {
     @Column(name = "fecha_asociacion", nullable = false)
     private LocalDate fechaAsociacion;
 
+    // Constrained states: PO (Puede Operar), EA (Espera de Aprobacion), RO (Restringido para Operar)
     @Column(name = "estado", nullable = false, length = 2)
     private String estado;
 
